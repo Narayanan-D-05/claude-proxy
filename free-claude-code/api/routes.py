@@ -110,7 +110,21 @@ async def create_message(
     except ProviderError:
         raise
     except Exception as e:
-        logger.error(f"Error: {e!s}\n{traceback.format_exc()}")
+        import datetime
+        tb = traceback.format_exc()
+        raw_error = str(e)
+        
+        # Store for diagnostics
+        if hasattr(raw_request.app.state, "last_error"):
+            raw_request.app.state.last_error = {
+                "message": raw_error,
+                "traceback": tb,
+                "timestamp": datetime.datetime.now().isoformat(),
+                "model_attempted": request_data.model,
+                "provider_model": request_data.resolved_provider_model
+            }
+            
+        logger.error(f"Error: {raw_error}\n{tb}")
         raise HTTPException(
             status_code=getattr(e, "status_code", 500),
             detail=get_user_facing_error_message(e),
@@ -274,8 +288,9 @@ async def get_models(_auth=Depends(require_api_key)):
 
 
 @router.get("/v1/diagnostics")
-async def get_diagnostics(settings: Settings = Depends(get_settings), _auth=Depends(require_api_key)):
+async def get_diagnostics(raw_request: Request, settings: Settings = Depends(get_settings), _auth=Depends(require_api_key)):
     """Masked diagnostics for troubleshooting Render environment."""
+    last_err = getattr(raw_request.app.state, "last_error", None)
     return {
         "status": "ready",
         "has_nvidia_key": bool(settings.nvidia_nim_api_key),
@@ -283,6 +298,7 @@ async def get_diagnostics(settings: Settings = Depends(get_settings), _auth=Depe
         "model": settings.model,
         "sonnet_model": settings.model_sonnet,
         "anthropic_version_supported": "2023-06-01",
+        "last_error": last_err
     }
 
 

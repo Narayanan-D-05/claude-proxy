@@ -12,6 +12,7 @@ from config.logging_config import configure_logging
 from config.settings import get_settings
 from providers.exceptions import ProviderError
 
+from fastapi.middleware.cors import CORSMiddleware
 from .dependencies import cleanup_provider
 from .routes import router
 
@@ -148,6 +149,7 @@ async def lifespan(app: FastAPI):
     app.state.messaging_platform = messaging_platform
     app.state.message_handler = message_handler
     app.state.cli_manager = cli_manager
+    app.state.last_error = {"message": "No errors recorded", "traceback": None, "timestamp": None}
 
     yield
 
@@ -186,6 +188,15 @@ def create_app() -> FastAPI:
         title="Claude Code Proxy",
         version="2.0.0",
         lifespan=lifespan,
+    )
+
+    # Liberal CORS policy for CLI and browser diagnostics
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
     )
 
     # Register routes
