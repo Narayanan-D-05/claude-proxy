@@ -55,6 +55,7 @@ class SystemContent(BaseModel):
 # Message Types
 # =============================================================================
 class Message(BaseModel):
+    model_config = {"extra": "allow"}
     role: Literal["user", "assistant"]
     content: (
         str
@@ -76,6 +77,7 @@ class Tool(BaseModel):
 
 
 class ThinkingConfig(BaseModel):
+    model_config = {"extra": "allow"}
     enabled: bool = True
 
 
@@ -83,6 +85,7 @@ class ThinkingConfig(BaseModel):
 # Request Models
 # =============================================================================
 class MessagesRequest(BaseModel):
+    model_config = {"extra": "allow"}
     model: str
     max_tokens: int | None = None
     messages: list[Message]

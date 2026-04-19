@@ -10,6 +10,7 @@ from loguru import logger
 
 from config.logging_config import configure_logging
 from config.settings import get_settings
+from fastapi.exceptions import RequestValidationError
 from providers.exceptions import ProviderError
 
 from fastapi.middleware.cors import CORSMiddleware
@@ -210,6 +211,36 @@ def create_app() -> FastAPI:
         return JSONResponse(
             status_code=exc.status_code,
             content=exc.to_anthropic_format(),
+        )
+
+    @app.exception_handler(RequestValidationError)
+    async def validation_exception_handler(request: Request, exc: RequestValidationError):
+        """Handle validation errors and record them in the black box."""
+        import datetime
+        import traceback
+        
+        err_msg = str(exc)
+        tb = traceback.format_exc()
+        
+        # Store for diagnostics
+        if hasattr(request.app.state, "last_error"):
+            request.app.state.last_error = {
+                "message": "Protocol Mismatch (422): " + err_msg,
+                "traceback": tb,
+                "timestamp": datetime.datetime.now().isoformat(),
+                "errors": exc.errors()
+            }
+            
+        logger.error(f"Validation Error: {err_msg}")
+        return JSONResponse(
+            status_code=422,
+            content={
+                "type": "error",
+                "error": {
+                    "type": "invalid_request_error",
+                    "message": f"Protocol mismatch: {err_msg}",
+                },
+            },
         )
 
     @app.exception_handler(Exception)
