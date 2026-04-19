@@ -115,20 +115,24 @@ def require_api_key(
 ) -> None:
     """Require a server API key (Anthropic-style).
 
-    Checks `x-api-key` header or `Authorization: Bearer ...` against
-    `Settings.anthropic_auth_token`. If `ANTHROPIC_AUTH_TOKEN` is empty, this is a no-op.
+    Checks multiple header variations against `Settings.anthropic_auth_token`.
     """
     anthropic_auth_token = settings.anthropic_auth_token
     if not anthropic_auth_token:
         # No API key configured -> allow
         return
 
+    # Check all possible header variations used by different clients/proxies
     header = (
         request.headers.get("x-api-key")
         or request.headers.get("authorization")
         or request.headers.get("anthropic-auth-token")
+        or request.headers.get("x-anthropic-auth-token")
+        or request.headers.get("x-auth-token")
     )
+
     if not header:
+        logger.warning("AUTH_FAILED: Missing API key in request headers")
         raise HTTPException(status_code=401, detail="Missing API key")
 
     # Support both raw key in X-API-Key and Bearer token in Authorization
@@ -141,6 +145,7 @@ def require_api_key(
         token = token.split(":", 1)[0]
 
     if token != anthropic_auth_token:
+        logger.warning("AUTH_FAILED: Invalid API key received")
         raise HTTPException(status_code=401, detail="Invalid API key")
 
 
