@@ -131,8 +131,13 @@ def require_api_key(
         or request.headers.get("x-auth-token")
     )
 
+    # Log the probe for debugging identity checks
+    path = request.url.path
+    if path.startswith("/v1/users/me") or path.startswith("/v1/organizations"):
+        logger.debug(f"IDENTITY_PROBE: path={path} has_header={bool(header)}")
+
     if not header:
-        logger.warning("AUTH_FAILED: Missing API key in request headers")
+        logger.warning(f"AUTH_FAILED: Missing API key in request headers for path={path}")
         raise HTTPException(status_code=401, detail="Missing API key")
 
     # Support both raw key in X-API-Key and Bearer token in Authorization
@@ -145,7 +150,7 @@ def require_api_key(
         token = token.split(":", 1)[0]
 
     if token != anthropic_auth_token:
-        logger.warning("AUTH_FAILED: Invalid API key received")
+        logger.warning(f"AUTH_FAILED: Invalid API key received for path={path}")
         raise HTTPException(status_code=401, detail="Invalid API key")
 
 

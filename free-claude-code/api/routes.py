@@ -150,6 +150,36 @@ async def root(
     }
 
 
+@router.get("/v1/users/me")
+async def get_user_me(_auth=Depends(require_api_key)):
+    """Mock identity endpoint for Claude CLI."""
+    return {
+        "id": "user_01ABC123",
+        "email": "user@example.com",
+        "first_name": "Claude",
+        "last_name": "User",
+        "created_at": "2024-01-01T00:00:00Z"
+    }
+
+
+@router.get("/v1/organizations")
+async def get_organizations(_auth=Depends(require_api_key)):
+    """Mock organizations endpoint for Claude CLI."""
+    return {
+        "data": [
+            {
+                "id": "org_01ABC123",
+                "name": "Default Organization",
+                "created_at": "2024-01-01T00:00:00Z",
+                "role": "admin"
+            }
+        ],
+        "has_more": False,
+        "first_id": "org_01ABC123",
+        "last_id": "org_01ABC123"
+    }
+
+
 @router.get("/health")
 async def health():
     """Health check endpoint."""
