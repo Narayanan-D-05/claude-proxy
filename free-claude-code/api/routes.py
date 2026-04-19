@@ -37,6 +37,12 @@ async def create_message(
         if not request_data.messages:
             raise InvalidRequestError("messages cannot be empty")
 
+        # Explicitly resolve any Claude CLI model aliases to the configured provider ID.
+        # This ensures aliases like 'claude-sonnet-4-6' are correctly mapped.
+        resolved = settings.resolve_model(request_data.model)
+        request_data.resolved_provider_model = resolved
+        request_data.map_model()
+
         # Support model override via API key (e.g. sk-ant-dummy:llama-4)
         header = (
             raw_request.headers.get("x-api-key")
