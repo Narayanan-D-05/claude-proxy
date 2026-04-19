@@ -219,6 +219,54 @@ async def get_organizations(_auth=Depends(require_api_key)):
     )
 
 
+@router.get("/v1/models")
+async def get_models(_auth=Depends(require_api_key)):
+    """Full mock models catalog for Claude CLI v2 compatibility."""
+    return JSONResponse(
+        content={
+            "data": [
+                {
+                    "type": "model",
+                    "id": "claude-3-5-sonnet-20241022",
+                    "display_name": "Claude 3.5 Sonnet",
+                    "created_at": "2024-10-22T00:00:00Z"
+                },
+                {
+                    "type": "model",
+                    "id": "claude-3-5-haiku-20241022",
+                    "display_name": "Claude 3.5 Haiku",
+                    "created_at": "2024-10-22T00:00:00Z"
+                },
+                {
+                    "type": "model",
+                    "id": "claude-3-5-opus-20240229",
+                    "display_name": "Claude 3 Opus",
+                    "created_at": "2024-02-29T00:00:00Z"
+                },
+                {
+                    "type": "model",
+                    "id": "claude-sonnet-4-6",
+                    "display_name": "Claude Sonnet 4.6 (Next-Gen)",
+                    "created_at": "2025-01-01T00:00:00Z"
+                },
+                {
+                    "type": "model",
+                    "id": "claude-haiku-4-5-20251001",
+                    "display_name": "Claude Haiku 4.5 (Next-Gen)",
+                    "created_at": "2025-10-01T00:00:00Z"
+                }
+            ],
+            "has_more": False,
+            "first_id": "claude-3-5-sonnet-20241022",
+            "last_id": "claude-haiku-4-5-20251001"
+        },
+        headers={
+            "anthropic-version": "2023-06-01",
+            "x-anthropic-version": "2023-06-01"
+        }
+    )
+
+
 @router.get("/health")
 async def health():
     """Health check endpoint."""
