@@ -73,10 +73,11 @@ async def create_message(
         # Cleanup model identity if enabled
         cleanup_model_identity(request_data, settings)
 
-        # Resolve provider from the model-aware mapping
-        provider_type = Settings.parse_provider_type(
-            request_data.resolved_provider_model or settings.model
-        )
+        # Resolve provider from the full provider model string (e.g. "nvidia_nim/z-ai/glm4.7")
+        # IMPORTANT: use resolved_provider_model (full string) NOT request_data.model
+        # (which has already had the provider prefix stripped by map_model())
+        full_model = request_data.resolved_provider_model or settings.model
+        provider_type = Settings.parse_provider_type(full_model)
         provider = get_provider_for_type(provider_type)
 
         request_id = f"req_{uuid.uuid4().hex[:12]}"
