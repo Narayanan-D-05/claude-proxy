@@ -273,6 +273,19 @@ async def get_models(_auth=Depends(require_api_key)):
     )
 
 
+@router.get("/v1/diagnostics")
+async def get_diagnostics(settings: Settings = Depends(get_settings), _auth=Depends(require_api_key)):
+    """Masked diagnostics for troubleshooting Render environment."""
+    return {
+        "status": "ready",
+        "has_nvidia_key": bool(settings.nvidia_nim_api_key),
+        "nvidia_key_preview": f"{settings.nvidia_nim_api_key[:8]}..." if settings.nvidia_nim_api_key else "MISSING",
+        "model": settings.model,
+        "sonnet_model": settings.model_sonnet,
+        "anthropic_version_supported": "2023-06-01",
+    }
+
+
 @router.get("/health")
 async def health():
     """Health check endpoint."""

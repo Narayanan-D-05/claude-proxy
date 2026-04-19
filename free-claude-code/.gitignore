@@ -6,7 +6,6 @@ __pycache__
 .serena
 .venv
 agent_workspace
-.env
 server.log
 .coverage
 llama_cache
