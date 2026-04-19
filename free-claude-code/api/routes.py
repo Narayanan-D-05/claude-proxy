@@ -185,7 +185,7 @@ async def get_user_me(_auth=Depends(require_api_key)):
 
 @router.get("/v1/organizations")
 async def get_organizations(_auth=Depends(require_api_key)):
-    """Full mock organizations endpoint for Claude CLI v2 compatibility."""
+    """Full mock organizations endpoint with expanded capabilities for CLI v2."""
     return JSONResponse(
         content={
             "data": [
@@ -194,7 +194,18 @@ async def get_organizations(_auth=Depends(require_api_key)):
                     "name": "Default Organization",
                     "created_at": "2024-01-01T00:00:00Z",
                     "role": "admin",
-                    "capabilities": ["can_use_sonnet", "can_use_opus", "can_use_haiku"]
+                    "capabilities": [
+                        "can_use_sonnet", 
+                        "can_use_opus", 
+                        "can_use_haiku",
+                        "can_use_claude_sonnet_4_6",
+                        "can_use_claude_sonnet_3_5",
+                        "can_use_claude_haiku_4_5",
+                        "can_use_claude_haiku_4_5_20251001",
+                        "can_use_claude_opus_4_7",
+                        "can_use_claude_opus_3",
+                        "can_use_custom_models"
+                    ]
                 }
             ],
             "has_more": False,

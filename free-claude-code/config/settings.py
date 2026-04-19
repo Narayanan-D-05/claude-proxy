@@ -231,9 +231,9 @@ class Settings(BaseSettings):
         name_lower = claude_model_name.lower()
         if "opus" in name_lower and self.model_opus is not None:
             return self.model_opus
-        if "haiku" in name_lower and self.model_haiku is not None:
+        if ("haiku" in name_lower or "4-5" in name_lower) and self.model_haiku is not None:
             return self.model_haiku
-        if "sonnet" in name_lower and self.model_sonnet is not None:
+        if ("sonnet" in name_lower or "4-6" in name_lower or "3-5" in name_lower) and self.model_sonnet is not None:
             return self.model_sonnet
         return self.model
 
