@@ -37,12 +37,12 @@ async def create_message(
         if not request_data.messages:
             raise InvalidRequestError("messages cannot be empty")
 
-        # Explicitly resolve any Claude CLI model aliases to the configured provider ID.
-        # This ensures aliases like 'claude-sonnet-4-6' are correctly mapped.
-        resolved = settings.resolve_model(request_data.model)
-        request_data.resolved_provider_model = resolved
-        request_data.map_model()
-
+        # Re-resolve using the ORIGINAL model name (e.g. "claude-sonnet-4-6"), not
+        # request_data.model which Pydantic's map_model() already stripped the provider
+        # prefix from (turning "nvidia_nim/z-ai/glm4.7" into "z-ai/glm4.7").
+        # resolved_provider_model from Pydantic is already correct; we only need to
+        # re-resolve if there's a header-based model override.
+        
         # Support model override via API key (e.g. sk-ant-dummy:llama-4)
         header = (
             raw_request.headers.get("x-api-key")
@@ -50,21 +50,22 @@ async def create_message(
             or raw_request.headers.get("anthropic-auth-token")
         )
         if header and ":" in header:
-            # Extract token and target model name from header
-            # Handling both Bearer and raw formats
             token_part = (
                 header.split(" ", 1)[1] if header.lower().startswith("bearer ") else header
             )
             if ":" in token_part:
                 target_model_name = token_part.split(":", 1)[1]
                 logger.debug(f"MODEL_HEADER_OVERRIDE: '{target_model_name}'")
-
-                # Re-resolve and force update the request data
+                # Re-resolve from the override name and update model fields directly
                 resolved_full = settings.resolve_model(target_model_name)
                 request_data.resolved_provider_model = resolved_full
-                request_data.map_model()
+                request_data.model = Settings.parse_model_name(resolved_full)
 
+        # At this point resolved_provider_model is the full string like
+        # "nvidia_nim/z-ai/glm4.7" — use it directly to get the provider type.
+        full_model = request_data.resolved_provider_model or settings.model
 
+        # Run fast-path optimizations (quota mock, title skip, etc.)
         optimized = try_optimizations(request_data, settings)
         if optimized is not None:
             return optimized
@@ -73,10 +74,6 @@ async def create_message(
         # Cleanup model identity if enabled
         cleanup_model_identity(request_data, settings)
 
-        # Resolve provider from the full provider model string (e.g. "nvidia_nim/z-ai/glm4.7")
-        # IMPORTANT: use resolved_provider_model (full string) NOT request_data.model
-        # (which has already had the provider prefix stripped by map_model())
-        full_model = request_data.resolved_provider_model or settings.model
         provider_type = Settings.parse_provider_type(full_model)
         provider = get_provider_for_type(provider_type)
 
