@@ -4,7 +4,7 @@ import asyncio
 import os
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import JSONResponse
 from loguru import logger
 
@@ -257,6 +257,35 @@ def create_app() -> FastAPI:
                 "error": {
                     "type": "api_error",
                     "message": "An unexpected error occurred.",
+                },
+            },
+        )
+
+    @app.exception_handler(404)
+    async def not_found_exception_handler(request: Request, exc: HTTPException):
+        """Handle 404 errors and record the attempted path in the black box."""
+        import datetime
+        
+        path = request.url.path
+        method = request.method
+        
+        # Store for diagnostics
+        if hasattr(request.app.state, "last_error"):
+            request.app.state.last_error = {
+                "message": f"Lost Path (404): {method} {path}",
+                "traceback": "Client tried to reach a path that does not exist on the proxy.",
+                "timestamp": datetime.datetime.now().isoformat(),
+                "attempted_path": path
+            }
+            
+        logger.error(f"404 Not Found: {method} {path}")
+        return JSONResponse(
+            status_code=404,
+            content={
+                "type": "error",
+                "error": {
+                    "type": "not_found_error",
+                    "message": f"The requested path '{path}' does not exist on this proxy. Please check your anthropic_base_url.",
                 },
             },
         )
