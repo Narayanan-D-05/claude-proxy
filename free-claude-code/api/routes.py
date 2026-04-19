@@ -4,7 +4,7 @@ import traceback
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, Request
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, JSONResponse
 from loguru import logger
 
 from config.settings import Settings
@@ -96,6 +96,8 @@ async def create_message(
                 "X-Accel-Buffering": "no",
                 "Cache-Control": "no-cache",
                 "Connection": "keep-alive",
+                "anthropic-version": "2023-06-01",
+                "x-anthropic-version": "2023-06-01",
             },
         )
 
@@ -143,49 +145,67 @@ async def root(
     settings: Settings = Depends(get_settings), _auth=Depends(require_api_key)
 ):
     """Root endpoint."""
-    return {
-        "status": "ok",
-        "provider": settings.provider_type,
-        "model": settings.model,
-    }
+    return JSONResponse(
+        content={
+            "status": "ok",
+            "provider": settings.provider_type,
+            "model": settings.model,
+        },
+        headers={
+            "anthropic-version": "2023-06-01",
+            "x-anthropic-version": "2023-06-01"
+        }
+    )
 
 
 @router.get("/v1/users/me")
 async def get_user_me(_auth=Depends(require_api_key)):
     """Full mock identity endpoint for Claude CLI v2 compatibility."""
-    return {
-        "id": "user_01ABC123",
-        "email": "user@example.com",
-        "first_name": "Claude",
-        "last_name": "User",
-        "created_at": "2024-01-01T00:00:00Z",
-        "account": {
-            "id": "acc_01ABC123",
-            "name": "Personal Account",
-            "settings": {
-                "default_organization_id": "org_01ABC123"
+    return JSONResponse(
+        content={
+            "id": "user_01ABC123",
+            "email": "user@example.com",
+            "first_name": "Claude",
+            "last_name": "User",
+            "created_at": "2024-01-01T00:00:00Z",
+            "account": {
+                "id": "acc_01ABC123",
+                "name": "Personal Account",
+                "settings": {
+                    "default_organization_id": "org_01ABC123"
+                }
             }
+        },
+        headers={
+            "anthropic-version": "2023-06-01",
+            "x-anthropic-version": "2023-06-01"
         }
-    }
+    )
 
 
 @router.get("/v1/organizations")
 async def get_organizations(_auth=Depends(require_api_key)):
     """Full mock organizations endpoint for Claude CLI v2 compatibility."""
-    return {
-        "data": [
-            {
-                "id": "org_01ABC123",
-                "name": "Default Organization",
-                "created_at": "2024-01-01T00:00:00Z",
-                "role": "admin",
-                "capabilities": ["can_use_sonnet", "can_use_opus", "can_use_haiku"]
-            }
-        ],
-        "has_more": False,
-        "first_id": "org_01ABC123",
-        "last_id": "org_01ABC123"
-    }
+    return JSONResponse(
+        content={
+            "data": [
+                {
+                    "id": "org_01ABC123",
+                    "name": "Default Organization",
+                    "created_at": "2024-01-01T00:00:00Z",
+                    "role": "admin",
+                    "capabilities": ["can_use_sonnet", "can_use_opus", "can_use_haiku"]
+                }
+            ],
+            "has_more": False,
+            "first_id": "org_01ABC123",
+            "last_id": "org_01ABC123"
+        },
+        headers={
+            "anthropic-version": "2023-06-01",
+            "x-anthropic-version": "2023-06-01"
+        }
+    )
 
 
 @router.get("/health")
