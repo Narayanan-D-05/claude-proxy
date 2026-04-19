@@ -122,6 +122,14 @@ def require_api_key(
         # No API key configured -> allow
         return
 
+    # Log the probe for debugging identity checks
+    path = request.url.path
+    is_identity_probe = path.startswith("/v1/users/me") or path.startswith("/v1/organizations")
+    
+    if is_identity_probe:
+        logger.debug(f"IDENTITY_PROBE: path={path} (Bypassing Auth)")
+        return
+
     # Check all possible header variations used by different clients/proxies
     header = (
         request.headers.get("x-api-key")
@@ -130,11 +138,6 @@ def require_api_key(
         or request.headers.get("x-anthropic-auth-token")
         or request.headers.get("x-auth-token")
     )
-
-    # Log the probe for debugging identity checks
-    path = request.url.path
-    if path.startswith("/v1/users/me") or path.startswith("/v1/organizations"):
-        logger.debug(f"IDENTITY_PROBE: path={path} has_header={bool(header)}")
 
     if not header:
         logger.warning(f"AUTH_FAILED: Missing API key in request headers for path={path}")

@@ -152,26 +152,34 @@ async def root(
 
 @router.get("/v1/users/me")
 async def get_user_me(_auth=Depends(require_api_key)):
-    """Mock identity endpoint for Claude CLI."""
+    """Full mock identity endpoint for Claude CLI v2 compatibility."""
     return {
         "id": "user_01ABC123",
         "email": "user@example.com",
         "first_name": "Claude",
         "last_name": "User",
-        "created_at": "2024-01-01T00:00:00Z"
+        "created_at": "2024-01-01T00:00:00Z",
+        "account": {
+            "id": "acc_01ABC123",
+            "name": "Personal Account",
+            "settings": {
+                "default_organization_id": "org_01ABC123"
+            }
+        }
     }
 
 
 @router.get("/v1/organizations")
 async def get_organizations(_auth=Depends(require_api_key)):
-    """Mock organizations endpoint for Claude CLI."""
+    """Full mock organizations endpoint for Claude CLI v2 compatibility."""
     return {
         "data": [
             {
                 "id": "org_01ABC123",
                 "name": "Default Organization",
                 "created_at": "2024-01-01T00:00:00Z",
-                "role": "admin"
+                "role": "admin",
+                "capabilities": ["can_use_sonnet", "can_use_opus", "can_use_haiku"]
             }
         ],
         "has_more": False,
