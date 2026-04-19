@@ -9,3 +9,4 @@ agent_workspace
 server.log
 .coverage
 llama_cache
+.env
