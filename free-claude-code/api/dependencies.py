@@ -110,9 +110,12 @@ def get_provider_for_type(provider_type: str) -> BaseProvider:
     return _providers[provider_type]
 
 
-    # THE "JUST WORKS" AUTH POLICY: 
-    # We log the token for visibility, but we allow everything to ensure the CLI
-    # never sees a 401/403 "Not logged in" error.
+async def require_api_key(request: Request):
+    """
+    THE 'JUST WORKS' AUTH POLICY:
+    We log the token for visibility, but we allow everything to ensure the CLI
+    never sees a 401/403 'Not logged in' error.
+    """
     header = (
         request.headers.get("x-api-key")
         or request.headers.get("authorization")
