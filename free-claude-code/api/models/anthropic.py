@@ -56,7 +56,7 @@ class SystemContent(BaseModel):
 # =============================================================================
 class Message(BaseModel):
     model_config = {"extra": "allow"}
-    role: Literal["user", "assistant"]
+    role: Literal["user", "assistant", "system"]
     content: (
         str
         | list[
@@ -68,6 +68,41 @@ class Message(BaseModel):
         ]
     )
     reasoning_content: str | None = None
+
+
+def _extract_system_messages(
+    messages: list[Message],
+    system: str | list[SystemContent] | None
+) -> tuple[list[Message], str | list[SystemContent] | None]:
+    """Helper to extract system messages from the messages array and merge into system field."""
+    system_msgs = [m for m in messages if m.role == "system"]
+    if not system_msgs:
+        return messages, system
+
+    remaining_messages = [m for m in messages if m.role != "system"]
+
+    extracted_texts = []
+    for msg in system_msgs:
+        if isinstance(msg.content, str):
+            extracted_texts.append(msg.content)
+        elif isinstance(msg.content, list):
+            for block in msg.content:
+                if hasattr(block, "text"):
+                    extracted_texts.append(block.text)
+                elif isinstance(block, dict) and "text" in block:
+                    extracted_texts.append(block["text"])
+
+    if extracted_texts:
+        additional_system = "\n\n".join(extracted_texts)
+        if not system:
+            system = additional_system
+        elif isinstance(system, str):
+            system = f"{system}\n\n{additional_system}"
+        elif isinstance(system, list):
+            for text in extracted_texts:
+                system.append(SystemContent(type="text", text=text))
+
+    return remaining_messages, system
 
 
 class Tool(BaseModel):
@@ -106,6 +141,9 @@ class MessagesRequest(BaseModel):
     @model_validator(mode="after")
     def map_model(self) -> MessagesRequest:
         """Map any Claude model name to the configured model (model-aware)."""
+        # Extract system messages from the messages list
+        self.messages, self.system = _extract_system_messages(self.messages, self.system)
+
         settings = get_settings()
         if self.original_model is None:
             self.original_model = self.model
@@ -132,6 +170,12 @@ class TokenCountRequest(BaseModel):
     tools: list[Tool] | None = None
     thinking: ThinkingConfig | None = None
     tool_choice: dict[str, Any] | None = None
+
+    @model_validator(mode="after")
+    def normalize_request(self) -> TokenCountRequest:
+        """Extract system messages and normalize request."""
+        self.messages, self.system = _extract_system_messages(self.messages, self.system)
+        return self
 
     @field_validator("model")
     @classmethod

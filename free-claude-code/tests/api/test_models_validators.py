@@ -161,3 +161,39 @@ def test_token_count_request_model_aware():
             messages=[Message(role="user", content="hello")],
         )
         assert request.model == "qwen2.5-7b"
+
+
+def test_messages_request_extracts_system_messages(mock_settings):
+    """MessagesRequest automatically extracts system messages from the messages list."""
+    with patch("api.models.anthropic.get_settings", return_value=mock_settings):
+        request = MessagesRequest(
+            model="claude-3-opus",
+            max_tokens=100,
+            messages=[
+                Message(role="system", content="System instruction 1"),
+                Message(role="user", content="hello"),
+                Message(role="system", content="System instruction 2"),
+            ],
+            system="Initial system instruction",
+        )
+
+        assert len(request.messages) == 1
+        assert request.messages[0].role == "user"
+        assert request.messages[0].content == "hello"
+        assert request.system == "Initial system instruction\n\nSystem instruction 1\n\nSystem instruction 2"
+
+
+def test_token_count_request_extracts_system_messages(mock_settings):
+    """TokenCountRequest automatically extracts system messages from the messages list."""
+    with patch("api.models.anthropic.get_settings", return_value=mock_settings):
+        request = TokenCountRequest(
+            model="claude-3-opus",
+            messages=[
+                Message(role="system", content="System instruction"),
+                Message(role="user", content="hello"),
+            ]
+        )
+
+        assert len(request.messages) == 1
+        assert request.messages[0].role == "user"
+        assert request.system == "System instruction"

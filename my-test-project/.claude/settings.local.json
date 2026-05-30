@@ -4,5 +4,5 @@
     "enabledMcpjsonServers": [
         "lmr"
     ],
-    "anthropic_base_url": "https://YOUR-PROXY-URL.onrender.com"
+    "anthropic_base_url": "http://127.0.0.1:3000"
 }
